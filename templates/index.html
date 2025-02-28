@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحليل النصوص</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #141e30;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            direction: rtl;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+        }
+
+        textarea {
+            width: 80%;
+            height: 150px;
+            font-size: 16px;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            background: #ff6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #ff4500;
+        }
+
+        #result {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 60%;
+            margin: 20px auto;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="neuralCanvas"></canvas>
+
+<div class="container">
+    <h1>تحليل النصوص</h1>
+    <textarea id="textInput" placeholder="أدخل النص هنا..."></textarea>
+    <br>
+    <button onclick="analyzeText()">تحليل</button>
+    <div id="result"></div>
+</div>
+
+<script>
+    function analyzeText() {
+        let text = document.getElementById("textInput").value;
+
+        fetch("/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("result").innerHTML = `
+                <p>عدد الكلمات: ${data.word_count}</p>
+                <p>عدد الأحرف: ${data.char_count}</p>
+                <p>أكثر الكلمات تكرارًا: ${JSON.stringify(data.most_common)}</p>
+                <p>تحليل المشاعر: ${data.sentiment}</p>
+            `;
+        });
+    }
+
+    const canvas = document.getElementById("neuralCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener("resize", () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initNeurons();
+    });
+
+    class Neuron {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.radius = Math.random() * 3 + 1;
+            this.speedX = Math.random() * 2 - 1;
+            this.speedY = Math.random() * 2 - 1;
+        }
+
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            if (this.x <= 0 || this.x >= canvas.width) this.speedX *= -1;
+            if (this.y <= 0 || this.y >= canvas.height) this.speedY *= -1;
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#00ffcc";
+            ctx.fill();
+        }
+    }
+
+    let neurons = [];
+
+    function initNeurons() {
+        neurons = [];
+        for (let i = 0; i < 100; i++) {
+            neurons.push(new Neuron());
+        }
+    }
+
+    function drawConnections() {
+        for (let i = 0; i < neurons.length; i++) {
+            for (let j = i + 1; j < neurons.length; j++) {
+                let dx = neurons[i].x - neurons[j].x;
+                let dy = neurons[i].y - neurons[j].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 100) {
+                    ctx.strokeStyle = "rgba(0, 255, 204, 0.2)";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(neurons[i].x, neurons[i].y);
+                    ctx.lineTo(neurons[j].x, neurons[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        neurons.forEach((neuron) => {
+            neuron.update();
+            neuron.draw();
+        });
+
+        drawConnections();
+
+        requestAnimationFrame(animate);
+    }
+
+    initNeurons();
+    animate();
+</script>
+
+
+
+</body>
+</html>
