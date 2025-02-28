@@ -19,16 +19,16 @@ def analyze():
     char_count = len(text)
     most_common = Counter(words).most_common(5)
 
-    # تحليل المشاعر (يعمل بشكل أفضل مع الإنجليزية)
+    # Sentiment Analysis (works best with English)
     blob = TextBlob(text)
     sentiment_score = blob.sentiment.polarity
 
     if sentiment_score > 0:
-        sentiment = "إيجابي 😊"
+        sentiment = "Positive 😊"
     elif sentiment_score < 0:
-        sentiment = "سلبي 😞"
+        sentiment = "Negative 😞"
     else:
-        sentiment = "محايد 😐"
+        sentiment = "Neutral 😐"
 
     return jsonify({
         "word_count": word_count,
